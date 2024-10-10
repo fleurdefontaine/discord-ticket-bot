@@ -1,0 +1,28 @@
+{
+  "name": "discord-ticket-bot",
+  "version": "1.0.0",
+  "description": "A powerful and customizable ticketing system for Discord servers, built with Discord.js v14.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["discord", "ticket", "bot", "support", "discord.js"],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.16.3",
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22",
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fleurdefontaine/discord-ticket-bot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fleurdefontaine/discord-ticket-bot/issues"
+  },
+  "homepage": "https://github.com/fleurdefontaine/discord-ticket-bot#readme"
+}
