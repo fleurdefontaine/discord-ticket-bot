@@ -1,4 +1,5 @@
 const { Events } = require('discord.js');
+const { createTicket, closeTicket } = require('../utils/ticketUtils');
 
 module.exports = {
   name: Events.InteractionCreate,
@@ -13,9 +14,17 @@ module.exports = {
         console.error(error);
         await interaction.reply({ content: 'There was an error executing this command!', ephemeral: true });
       }
-    } else if (interaction.isButton() && interaction.customId === 'create_ticket') {
-      const { createTicket } = require('../utils/ticketUtils');
-      await createTicket(interaction, client);
+    } else if (interaction.isButton()) {
+      switch (interaction.customId) {
+        case 'create_ticket':
+          await createTicket(interaction, client);
+          break;
+        case 'close_ticket':
+          await closeTicket(interaction, client);
+          break;
+        default:
+          break;
+      }
     }
   },
 };

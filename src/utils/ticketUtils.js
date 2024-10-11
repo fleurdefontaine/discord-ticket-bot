@@ -12,13 +12,15 @@ async function setupTicket(client) {
   const embed = new EmbedBuilder()
     .setTitle('Support Ticket System')
     .setDescription(client.config.embedDescription)
-    .setColor('#0099ff');
+    .setColor('#0099ff')
+    .setFooter({ text: 'Click the button below to create a ticket' });
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('create_ticket')
       .setLabel(client.config.buttonLabel)
       .setStyle(ButtonStyle.Primary)
+      .setEmoji('🎫')
   );
 
   await settingsChannel.send({ embeds: [embed], components: [row] });
@@ -64,7 +66,26 @@ async function createTicket(interaction, client) {
 
   client.tickets.set(user.id, ticketChannel.id);
 
-  await ticketChannel.send(`Welcome to your ticket, ${user}! A staff member will be with you shortly.`);
+  const welcomeEmbed = new EmbedBuilder()
+    .setTitle('Welcome to Your Ticket')
+    .setDescription(`Hello ${user}, a staff member will be with you shortly.`)
+    .setColor('#00ff00')
+    .setTimestamp();
+
+  const buttonRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('close_ticket')
+      .setLabel('Close Ticket')
+      .setStyle(ButtonStyle.Danger)
+      .setEmoji('🔒'),
+    new ButtonBuilder()
+      .setCustomId('claim_ticket')
+      .setLabel('Claim Ticket')
+      .setStyle(ButtonStyle.Success)
+      .setEmoji('🙋')
+  );
+
+  await ticketChannel.send({ embeds: [welcomeEmbed], components: [buttonRow] });
 
   await interaction.reply({
     content: `Your ticket has been created: ${ticketChannel}`,
@@ -72,4 +93,17 @@ async function createTicket(interaction, client) {
   });
 }
 
-module.exports = { setupTicket, createTicket };
+async function closeTicket(interaction, client) {
+  const channel = interaction.channel;
+  if (!channel.name.startsWith('ticket-')) {
+    return interaction.reply({ content: 'This command can only be used in ticket channels!', ephemeral: true });
+  }
+
+  await channel.send('This ticket will be closed in 5 seconds...');
+  setTimeout(async () => {
+    await channel.delete();
+    client.tickets.delete(channel.topic);
+  }, 5000);
+}
+
+module.exports = { setupTicket, createTicket, closeTicket };
