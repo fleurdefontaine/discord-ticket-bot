@@ -2,6 +2,7 @@ const { Client, GatewayIntentBits, Collection, Partials } = require('discord.js'
 const fs = require('fs');
 const path = require('path');
 const config = require('./src/config.json');
+const { createTranscript } = require('discord-html-transcripts');
 
 const client = new Client({
 	intents: Object.values(GatewayIntentBits),
