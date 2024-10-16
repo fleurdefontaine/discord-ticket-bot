@@ -1,4 +1,5 @@
-const { ChannelType, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
+const { ChannelType, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+const { createTranscript } = require('discord-html-transcripts');
 
 async function setupTicket(client) {
   const guild = await client.guilds.fetch(client.config.guildId);
@@ -27,7 +28,7 @@ async function setupTicket(client) {
 }
 
 async function createTicket(interaction, client) {
-  const { user, guild } = interaction;
+  const { user } = interaction;
 
   if (client.tickets.has(user.id)) {
     return interaction.reply({
@@ -42,6 +43,36 @@ async function createTicket(interaction, client) {
       ephemeral: true,
     });
   }
+
+  const modal = new ModalBuilder()
+    .setCustomId('ticket_modal')
+    .setTitle('Create a Ticket');
+
+  const issueInput = new TextInputBuilder()
+    .setCustomId('issue_description')
+    .setLabel('Please Explain Your Issue')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true);
+
+  const priorityInput = new TextInputBuilder()
+    .setCustomId('priority_level')
+    .setLabel('Priority Level (Low, Medium, High)')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true);
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(issueInput),
+    new ActionRowBuilder().addComponents(priorityInput)
+  );
+
+  await interaction.showModal(modal);
+}
+
+async function handleTicketModalSubmit(interaction, client) {
+  const { user, guild } = interaction;
+
+  const issueDescription = interaction.fields.getTextInputValue('issue_description');
+  const priorityLevel = interaction.fields.getTextInputValue('priority_level');
 
   const channelName = `ticket-${user.username}`;
   const ticketChannel = await guild.channels.create({
@@ -71,6 +102,12 @@ async function createTicket(interaction, client) {
     .setDescription(`Hello ${user}, a staff member will be with you shortly.`)
     .setColor('#00ff00')
     .setTimestamp();
+    
+  const modalEmbed = new EmbedBuilder()
+    .setTitle('Reports Details')
+    .setDescription(`Ticket ID: ${ticketChannel.id}\n\n🚨Issues: ${issueDescription} \n🔐 User ID: ${priorityLevel}`)
+    .setColor('#00ff00');
+  
 
   const buttonRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -85,8 +122,8 @@ async function createTicket(interaction, client) {
       .setEmoji('🙋')
   );
 
-  await ticketChannel.send({ embeds: [welcomeEmbed], components: [buttonRow] });
-
+  await ticketChannel.send({ embeds: [welcomeEmbed, modalEmbed], components: [buttonRow] });
+  
   await interaction.reply({
     content: `Your ticket has been created: ${ticketChannel}`,
     ephemeral: true,
@@ -98,6 +135,30 @@ async function closeTicket(interaction, client) {
   if (!channel.name.startsWith('ticket-')) {
     return interaction.reply({ content: 'This command can only be used in ticket channels!', ephemeral: true });
   }
+    await interaction.deferUpdate();
+    
+  const timestampOpened = new Date(channel.createdTimestamp).toLocaleString('en-US', { 
+    year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true 
+  });
+  const timestampClosed = new Date().toLocaleString('en-US', { 
+    year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true 
+  });
+  
+  const transcript = await createTranscript(channel, {
+    limit: -1, 
+    returnBuffer: false,
+    fileName: `transcript-${channel.id}.html`
+  });
+
+  const transcriptChannel = await client.channels.fetch(client.config.ticketTranscript);
+
+  const transcriptEmbed = new EmbedBuilder()
+    .setTitle('Ticket Transcript')
+    .setDescription(`**Ticket Details:**\nTicket ID: ${channel.id}\nTime Open: ${timestampOpened}\nTime Close: ${timestampClosed}\n**Opened by:**\n<@${interaction.user.id}>\n**Claimed by:**\n<@${interaction.user.id}>\n**Closed by:**\n<@${interaction.user.id}>`)
+    .setColor('#0099ff')
+    .setTimestamp();
+
+  await transcriptChannel.send({ embeds: [transcriptEmbed], files: [transcript] });
 
   await channel.send('This ticket will be closed in 5 seconds...');
   setTimeout(async () => {
@@ -106,4 +167,40 @@ async function closeTicket(interaction, client) {
   }, 5000);
 }
 
-module.exports = { setupTicket, createTicket, closeTicket };
+async function claimTicket(interaction, client) {
+  const channel = interaction.channel;
+
+  if (!channel.name.startsWith('ticket-')) {
+    return interaction.reply({ content: 'This command can only be used in ticket channels!', ephemeral: true });
+  }
+
+  const member = interaction.member;
+  const hasStaffRole = client.config.staffRoles.some(roleId => member.roles.cache.has(roleId));
+
+  if (!hasStaffRole) {
+    return interaction.reply({
+      content: 'You do not have permission to claim this ticket.',
+      ephemeral: true,
+    });
+  }
+
+  await interaction.deferUpdate();
+
+  const ticketHandlerRoleId = client.config.staffRoles[1];
+  const ticketHandlerRole = interaction.guild.roles.cache.get(ticketHandlerRoleId);
+
+  if (!ticketHandlerRole) {
+    return interaction.followUp({ content: 'Ticket handler role not found!', ephemeral: true });
+  }
+
+    const claimedEmbed = new EmbedBuilder()
+    .setTitle('Ticket Claimed')
+    .setDescription(`Staff <@${interaction.user.id}> Claimed Your Ticket`)
+    .setColor('#ffcc00')
+    .setTimestamp();
+
+  await channel.send({ embeds: [claimedEmbed] });
+}
+
+
+module.exports = { setupTicket, createTicket, handleTicketModalSubmit, closeTicket, claimTicket };

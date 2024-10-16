@@ -1,5 +1,5 @@
 const { Events } = require('discord.js');
-const { setupTicketSystem } = require('../utils/ticketUtils');
+const { setupTicket } = require('../utils/ticketUtils');
 
 module.exports = {
   name: Events.ClientReady,

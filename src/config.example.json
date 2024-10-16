@@ -5,6 +5,7 @@
   "staffRoles": ["STAFF_ROLE_ID_1", "STAFF_ROLE_ID_2"],
   "ticketLimit": 1,
   "settingsChannelId": "SETTINGS_CHANNEL_ID",
+  "ticketTranscript": "TRANSCRIPT_CHANNEL_ID",
   "embedDescription": "Click the button below to create a new support ticket.",
   "buttonLabel": "Create Ticket"
 }

@@ -22,13 +22,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/fleurdefontaine/discord-ticket-bot.git"
+    "url": "git+https://github.com/fleurdefontaine/discord-ticket-bot.git"
   },
   "bugs": {
     "url": "https://github.com/fleurdefontaine/discord-ticket-bot/issues"
   },
   "homepage": "https://github.com/fleurdefontaine/discord-ticket-bot#readme",
   "dependencies": {
+    "discord-html-transcripts": "^3.2.0",
     "discord.js": "^14.16.3"
   }
 }
